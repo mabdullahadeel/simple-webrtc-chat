@@ -8,9 +8,9 @@ import React, {
 } from "react";
 import { io } from "socket.io-client";
 import Peer, { SignalData, Instance } from "simple-peer";
-import { CallUser, ReceiveCall, GobalContext } from "../types";
+import { CallUser, ReceiveCall, GlobalContext } from "../types";
 
-export const SocketContext = createContext<GobalContext>({} as GobalContext);
+export const SocketContext = createContext<GlobalContext>({} as GlobalContext);
 
 const socket = io("http://localhost:5000");
 
@@ -44,14 +44,14 @@ export const SocketProvider = ({
     // socket handlers
     socket.on("me", (id: string) => setMyId(id));
 
-    socket.on("calluser", ({ from, name, signalData }: CallUser) => {
+    socket.on("callUser", ({ from, name, signalData }: CallUser) => {
       setCall({ from, name, signalData, isReceivingCall: true });
     });
   }, []);
 
   // Receive a call from another user
   const answerCall = () => {
-    setCallAccepted(false);
+    setCallAccepted(true);
 
     const peer = new Peer({
       initiator: false,
@@ -66,7 +66,10 @@ export const SocketProvider = ({
 
     // receive signal data from peer
     peer.on("stream", (currentStream: MediaStream) => {
-      if (userVideo.current) userVideo.current.srcObject = currentStream;
+      const node = userVideo.current;
+      if (node) {
+        node.srcObject = currentStream;
+      }
     });
 
     peer.signal(call?.signalData);
@@ -87,7 +90,9 @@ export const SocketProvider = ({
     });
 
     peer.on("stream", (currentStream: MediaStream) => {
-      if (userVideo.current) userVideo.current.srcObject = currentStream;
+      if (userVideo.current) {
+        userVideo.current.srcObject = currentStream;
+      }
     });
 
     socket.on("callaccepted", (signal: SignalData) => {

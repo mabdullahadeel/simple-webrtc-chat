@@ -11,7 +11,7 @@ export interface ReceiveCall extends CallUser {
   isReceivingCall: boolean;
 }
 
-export interface GobalContext {
+export interface GlobalContext {
   call: ReceiveCall;
   callAccepted: boolean;
   callEnded: boolean;

@@ -31,7 +31,7 @@ app.get("/server-health", (req, res) => {
 io.on("connection", (socket) => {
   console.log("a user connected with => ", socket.id);
 
-  sockit.emit("me", socket.id);
+  socket.emit("me", socket.id);
 
   // handle socket disconnection
   socket.on("disconnect", () => {
@@ -40,8 +40,8 @@ io.on("connection", (socket) => {
   });
 
   // Handle calling other user
-  socket.on("calluser", (userToCall, signalData, from, name) => {
-    io.to(userToCall).emit("calluser", signalData, from, name);
+  socket.on("calluser", ({ userToCall, signalData, from, name }) => {
+    io.to(userToCall).emit("callUser", { signalData, from, name });
   });
 
   // Handle Call acceptance
