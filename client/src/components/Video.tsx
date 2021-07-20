@@ -1,9 +1,22 @@
+import { useEffect } from "react";
 import { Text, Grid, Box } from "@chakra-ui/react";
 import useSocketPeer from "../hooks/useSocketPeer";
 
 function Video() {
-  const { myVideo, userVideo, name, callEnded, stream, call, callAccepted } =
-    useSocketPeer();
+  const {
+    myVideo,
+    userVideo,
+    name,
+    callEnded,
+    stream,
+    call,
+    callAccepted,
+    callAccepterName,
+  } = useSocketPeer();
+
+  useEffect(() => {
+    console.log(userVideo);
+  }, [userVideo]);
   return (
     <Grid templateColumns="repeat(2, 1fr)" gap={6}>
       {/* Current User Video */}
@@ -16,8 +29,10 @@ function Video() {
       {/* Other Caller's Vider */}
       {callAccepted && !callEnded && (
         <Box>
-          <Text>{call.name || "Random Caller"}</Text>
-          <video playsInline muted ref={userVideo} autoPlay />
+          <Text>{call.name || callAccepterName || "Random Caller"}</Text>
+          <Box>
+            <video playsInline muted ref={userVideo} autoPlay />
+          </Box>
         </Box>
       )}
     </Grid>

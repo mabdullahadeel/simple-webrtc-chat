@@ -25,6 +25,7 @@ export const SocketProvider = ({
   const [name, setName] = useState<string>("");
   const [callAccepted, setCallAccepted] = useState<boolean>(false);
   const [callEnded, setCallEnded] = useState<boolean>(false);
+  const [callAccepterName, setCallAccepterName] = useState<string>("");
 
   const myVideo = useRef<HTMLVideoElement | null>(null);
   const userVideo = useRef<HTMLVideoElement | null>(null);
@@ -44,15 +45,13 @@ export const SocketProvider = ({
     // socket handlers
     socket.on("me", (id: string) => setMyId(id));
 
-    socket.on("callUser", ({ from, name, signalData }: CallUser) => {
+    socket.on("userCalling", ({ from, name, signalData }: CallUser) => {
       setCall({ from, name, signalData, isReceivingCall: true });
     });
   }, []);
 
   // Receive a call from another user
   const answerCall = () => {
-    setCallAccepted(true);
-
     const peer = new Peer({
       initiator: false,
       trickle: false,
@@ -61,18 +60,18 @@ export const SocketProvider = ({
 
     // send signal data to peer
     peer.on("signal", (signalData: SignalData) => {
-      socket.emit("answercall", { signal: signalData, to: call?.from });
+      socket.emit("answercall", { signal: signalData, to: call?.from, name });
     });
 
     // receive signal data from peer
     peer.on("stream", (currentStream: MediaStream) => {
-      const node = userVideo.current;
-      if (node) {
-        node.srcObject = currentStream;
+      if (userVideo.current) {
+        userVideo.current.srcObject = currentStream;
       }
     });
 
     peer.signal(call?.signalData);
+    setCallAccepted(true);
 
     connectionRef.current = peer;
   };
@@ -85,8 +84,13 @@ export const SocketProvider = ({
       stream: stream,
     });
 
-    peer.on("signal", (signalData: SignalData) => {
-      socket.emit("calluser", { userToCall: id, signalData, from: myId, name });
+    peer.on("signal", (mySginalData: SignalData) => {
+      socket.emit("calluser", {
+        userToCall: id,
+        signalData: mySginalData,
+        from: myId,
+        name,
+      });
     });
 
     peer.on("stream", (currentStream: MediaStream) => {
@@ -95,10 +99,14 @@ export const SocketProvider = ({
       }
     });
 
-    socket.on("callaccepted", (signal: SignalData) => {
-      setCallAccepted(true);
-      peer.signal(signal);
-    });
+    socket.on(
+      "callaccepted",
+      ({ signalData, name }: { signalData: SignalData; name: string }) => {
+        setCallAccepterName(name);
+        setCallAccepted(true);
+        peer.signal(signalData);
+      }
+    );
 
     connectionRef.current = peer;
   };
@@ -106,6 +114,8 @@ export const SocketProvider = ({
   const endCall = () => {
     setCallEnded(true);
     connectionRef.current?.destroy();
+
+    window.location.reload();
   };
 
   return (
@@ -119,6 +129,7 @@ export const SocketProvider = ({
         myId,
         stream,
         name,
+        callAccepterName,
         setName,
         answerCall,
         callOtherUser,

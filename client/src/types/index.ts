@@ -20,6 +20,7 @@ export interface GlobalContext {
   myId: string;
   stream: MediaStream | undefined;
   name: string;
+  callAccepterName: string;
   setName: Dispatch<SetStateAction<string>>;
   answerCall: () => void;
   callOtherUser: (id: string) => void;

@@ -41,12 +41,15 @@ io.on("connection", (socket) => {
 
   // Handle calling other user
   socket.on("calluser", ({ userToCall, signalData, from, name }) => {
-    io.to(userToCall).emit("callUser", { signalData, from, name });
+    io.to(userToCall).emit("userCalling", { signalData, from, name });
   });
 
   // Handle Call acceptance
   socket.on("answercall", (data) => {
-    io.to(data.to).emit("callaccepted", data.signal);
+    io.to(data.to).emit("callaccepted", {
+      signalData: data.signal,
+      name: data.name,
+    });
   });
 });
 
