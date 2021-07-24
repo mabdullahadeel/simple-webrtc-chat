@@ -31,7 +31,7 @@ function Video() {
         <Box>
           <Text>{call.name || callAccepterName || "Random Caller"}</Text>
           <Box>
-            <video playsInline muted ref={userVideo} autoPlay />
+            <video playsInline muted ref={myVideo} autoPlay />
           </Box>
         </Box>
       )}

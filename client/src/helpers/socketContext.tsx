@@ -31,16 +31,47 @@ export const SocketProvider = ({
   const userVideo = useRef<HTMLVideoElement | null>(null);
   const connectionRef = useRef<Instance>();
 
+  const config = {
+    iceServers: [
+      {
+        urls: "stun:numb.viagenie.ca",
+        username: "sultan1640@gmail.com",
+        credential: "98376683",
+      },
+      {
+        urls: "turn:numb.viagenie.ca",
+        username: "sultan1640@gmail.com",
+        credential: "98376683",
+      },
+    ],
+  };
   useEffect(() => {
     // get the permission to user camera and microphone
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
+
+    async function enableStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
         setStream(stream);
 
-        const node = myVideo.current;
-        if (node) node.srcObject = stream;
-      });
+        if (myVideo.current && !myVideo.current.srcObject)
+          myVideo.current.srcObject = stream;
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    if (!stream) {
+      enableStream();
+    } else {
+      return function cleanup() {
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
+      };
+    }
 
     // socket handlers
     socket.on("me", (id: string) => setMyId(id));
@@ -48,14 +79,15 @@ export const SocketProvider = ({
     socket.on("userCalling", ({ from, name, signalData }: CallUser) => {
       setCall({ from, name, signalData, isReceivingCall: true });
     });
-  }, []);
+  }, [stream]);
 
   // Receive a call from another user
   const answerCall = () => {
     const peer = new Peer({
       initiator: false,
       trickle: false,
-      stream: stream,
+      stream,
+      config,
     });
 
     // send signal data to peer
@@ -63,14 +95,15 @@ export const SocketProvider = ({
       socket.emit("answercall", { signal: signalData, to: call?.from, name });
     });
 
-    // receive signal data from peer
+    // receive stream from peer
     peer.on("stream", (currentStream: MediaStream) => {
-      if (userVideo.current) {
+      if (currentStream && userVideo.current && !userVideo.current.srcObject) {
+        console.log("everything set and get to go - answerer");
         userVideo.current.srcObject = currentStream;
       }
     });
 
-    peer.signal(call?.signalData);
+    peer.signal(call.signalData);
     setCallAccepted(true);
 
     connectionRef.current = peer;
@@ -81,20 +114,21 @@ export const SocketProvider = ({
     const peer = new Peer({
       initiator: true,
       trickle: false,
-      stream: stream,
+      stream,
     });
 
-    peer.on("signal", (mySginalData: SignalData) => {
+    peer.on("signal", (mySignalData: SignalData) => {
       socket.emit("calluser", {
         userToCall: id,
-        signalData: mySginalData,
+        signalData: mySignalData,
         from: myId,
         name,
       });
     });
 
     peer.on("stream", (currentStream: MediaStream) => {
-      if (userVideo.current) {
+      if (currentStream && userVideo.current && !userVideo.current.srcObject) {
+        console.log("everything set and get to go");
         userVideo.current.srcObject = currentStream;
       }
     });
