@@ -31,20 +31,6 @@ export const SocketProvider = ({
   const userVideo = useRef<HTMLVideoElement | null>(null);
   const connectionRef = useRef<Instance>();
 
-  const config = {
-    iceServers: [
-      {
-        urls: "stun:numb.viagenie.ca",
-        username: "sultan1640@gmail.com",
-        credential: "98376683",
-      },
-      {
-        urls: "turn:numb.viagenie.ca",
-        username: "sultan1640@gmail.com",
-        credential: "98376683",
-      },
-    ],
-  };
   useEffect(() => {
     // get the permission to user camera and microphone
 
@@ -83,16 +69,20 @@ export const SocketProvider = ({
 
   // Receive a call from another user
   const answerCall = () => {
+    setCallAccepted(true);
+
     const peer = new Peer({
       initiator: false,
       trickle: false,
       stream,
-      config,
     });
-
     // send signal data to peer
-    peer.on("signal", (signalData: SignalData) => {
-      socket.emit("answercall", { signal: signalData, to: call?.from, name });
+    peer.on("signal", (signalingData: SignalData) => {
+      socket.emit("answercall", {
+        signal: signalingData,
+        to: call?.from,
+        name,
+      });
     });
 
     // receive stream from peer
@@ -103,8 +93,11 @@ export const SocketProvider = ({
       }
     });
 
+    peer.on("error", (err) => {
+      console.log(err);
+    });
+
     peer.signal(call.signalData);
-    setCallAccepted(true);
 
     connectionRef.current = peer;
   };
@@ -133,12 +126,22 @@ export const SocketProvider = ({
       }
     });
 
+    peer.on("error", (err) => {
+      console.log(err);
+    });
+
     socket.on(
       "callaccepted",
-      ({ signalData, name }: { signalData: SignalData; name: string }) => {
+      ({
+        signalingData,
+        name,
+      }: {
+        signalingData: SignalData;
+        name: string;
+      }) => {
         setCallAccepterName(name);
         setCallAccepted(true);
-        peer.signal(signalData);
+        peer.signal(signalingData);
       }
     );
 

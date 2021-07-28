@@ -16,7 +16,8 @@ function Video() {
 
   useEffect(() => {
     console.log(userVideo);
-  }, [userVideo]);
+    console.log("Call accepted", callAccepted);
+  }, [userVideo, callAccepted]);
   return (
     <Grid templateColumns="repeat(2, 1fr)" gap={6}>
       {/* Current User Video */}
@@ -31,7 +32,7 @@ function Video() {
         <Box>
           <Text>{call.name || callAccepterName || "Random Caller"}</Text>
           <Box>
-            <video playsInline muted ref={myVideo} autoPlay />
+            <video playsInline muted ref={userVideo} autoPlay />
           </Box>
         </Box>
       )}

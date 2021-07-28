@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
   // Handle Call acceptance
   socket.on("answercall", (data) => {
     io.to(data.to).emit("callaccepted", {
-      signalData: data.signal,
+      signallingData: data.signal,
       name: data.name,
     });
   });
